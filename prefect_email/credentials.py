@@ -1,8 +1,8 @@
 """Credential classes used to perform authenticated interactions with email services"""
 
-import ssl
 from enum import Enum
 from smtplib import SMTP, SMTP_SSL
+from ssl import SSLContext, create_default_context
 from typing import Optional, Union
 
 from prefect.blocks.core import Block
@@ -98,9 +98,13 @@ class EmailServerCredentials(Block):
     smtp_type: Optional[Union[str, SMTPType]] = SMTPType.SSL
     smtp_port: Optional[int] = None
 
-    def get_server(self) -> SMTP:
+    def get_server(self, ssl_context: SSLContext = None) -> SMTP:
         """
         Gets an authenticated SMTP server.
+
+        Args:
+            ssl_context: A custom SSLContext to pass to the SMTP server
+                If None, then ssl.create_default_context() is used
 
         Returns:
             SMTP: An authenticated SMTP server.
@@ -128,19 +132,18 @@ class EmailServerCredentials(Block):
             smtp_server = smtp_server.value
 
         smtp_type = _cast_to_enum(self.smtp_type, SMTPType, restrict=True)
-        smtp_port = self.smtp_port
-        if smtp_port is None:
-            smtp_port = smtp_type.value
+        smtp_port = self.smtp_port or smtp_type.value
 
         if smtp_type == SMTPType.INSECURE:
             server = SMTP(smtp_server, smtp_port)
         else:
-            context = ssl.create_default_context()
+            if ssl_context is None:
+                ssl_context = create_default_context()
             if smtp_type == SMTPType.SSL:
-                server = SMTP_SSL(smtp_server, smtp_port, context=context)
+                server = SMTP_SSL(smtp_server, smtp_port, context=ssl_context)
             elif smtp_type == SMTPType.STARTTLS:
                 server = SMTP(smtp_server, smtp_port)
-                server.starttls(context=context)
+                server.starttls(context=ssl_context)
             if self.username is not None:
                 server.login(self.username, self.password.get_secret_value())
 
