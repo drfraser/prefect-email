@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+<<<<<<< HEAD
 - Add custom SSLContext parameter to EmailServerCredentials - [#38](https://github.com/PrefectHQ/prefect-email/pull/38)
+- Fix STARTTLS to use port 587 [#41](https://github.com/PrefectHQ/prefect-email/pull/41)
 
 ### Added
 

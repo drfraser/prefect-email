@@ -73,9 +73,9 @@ class EmailServerCredentials(Block):
 
     Attributes:
         username: The username to use for authentication to the server.
-            Unnecessary if SMTP login is not required
+            Unnecessary if SMTP login is not required.
         password: The password to use for authentication to the server.
-            Unnecessary if SMTP login is not required
+            Unnecessary if SMTP login is not required.
         smtp_server: Either the hostname of the SMTP server, or one of the
             keys from the built-in SMTPServer Enum members, like "gmail".
         smtp_type: Either "SSL", "STARTTLS", or "INSECURE".
@@ -93,9 +93,9 @@ class EmailServerCredentials(Block):
     _logo_url = "https://images.ctfassets.net/gm98wzqotmnx/3PcxFuO9XUqs7wU9MiUBMg/ca740e27815d15528373aced667f58b9/email__1_.png?h=250"  # noqa
 
     username: Optional[str] = None
-    password: Optional[SecretStr] = ""
-    smtp_server: Optional[Union[str, SMTPServer]] = SMTPServer.GMAIL
-    smtp_type: Optional[Union[str, SMTPType]] = SMTPType.SSL
+    password: SecretStr = SecretStr("")
+    smtp_server: Union[str, SMTPServer] = SMTPServer.GMAIL
+    smtp_type: Union[str, SMTPType] = SMTPType.SSL
     smtp_port: Optional[int] = None
 
     def get_server(self, ssl_context: SSLContext = None) -> SMTP:

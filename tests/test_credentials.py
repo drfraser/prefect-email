@@ -35,7 +35,13 @@ def test_cast_to_enum_restrict_error():
 )
 @pytest.mark.parametrize(
     "smtp_type, smtp_port",
-    [("SSL", 465), ("STARTTLS", 587), ("ssl", 465), ("StartTLS", 587)],
+    [
+        ("SSL", 465),
+        ("STARTTLS", 587),
+        ("ssl", 465),
+        ("StartTLS", 587),
+        ("insecure", 25),
+    ],
 )
 @pytest.mark.parametrize("ssl_context", [None, ssl.create_default_context()])
 def test_email_server_credentials_get_server(
@@ -47,8 +53,9 @@ def test_email_server_credentials_get_server(
         smtp_server=smtp_server,
         smtp_type=smtp_type,
     ).get_server(ssl_context=ssl_context)
-    assert server.username == "username"
-    assert server.password == "password"
+    if smtp_type.lower() != "insecure":
+        assert server.username == "username"
+        assert server.password == "password"
     assert server.server.lower() == "smtp.gmail.com"
     assert server.port == smtp_port
     default_context = ssl.create_default_context()
@@ -78,3 +85,20 @@ def test_email_server_credentials_get_server_error(smtp):
         EmailServerCredentials(
             username="username", password="password", smtp_type="INVALID"
         ).get_server()
+
+
+def test_email_server_credentials_override_smtp_port(smtp):
+    server = EmailServerCredentials(
+        username="username",
+        password="password",
+        smtp_server=SMTPServer.GMAIL,
+        smtp_type=SMTPType.SSL,
+        smtp_port=1234,
+    ).get_server()
+    assert server.port == 1234
+
+
+def test_email_server_credentials_defaults(smtp):
+    server = EmailServerCredentials().get_server()
+    assert server.server.lower() == "smtp.gmail.com"
+    assert server.port == 465
