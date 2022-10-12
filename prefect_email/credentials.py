@@ -3,6 +3,7 @@
 import ssl
 from enum import Enum
 from smtplib import SMTP, SMTP_SSL
+from ssl import SSLContext
 from typing import Optional, Union
 
 from prefect.blocks.core import Block
@@ -98,6 +99,30 @@ class EmailServerCredentials(Block):
     smtp_type: Union[str, SMTPType] = SMTPType.SSL
     smtp_port: Optional[int] = None
 
+    _context = None
+
+    def make_default_context(self):
+        """Returns the default SSLContext created by Python and the OS"""
+        return ssl.create_default_context()
+
+    # @property
+    def get_context(self):
+        """Getter for the context property"""
+        if self._context is None:
+            self._context = self.make_default_context()
+        return self._context
+
+    # @context.setter
+    def set_context(self, context: SSLContext):
+        """Setter for the context property"""
+        self._context = context
+
+    context = property(
+        fget=get_context,
+        fset=set_context,
+        doc="SSLContext used when creating a SMTP object",
+    )
+
     def get_server(self) -> SMTP:
         """
         Gets an authenticated SMTP server.
@@ -135,12 +160,11 @@ class EmailServerCredentials(Block):
         if smtp_type == SMTPType.INSECURE:
             server = SMTP(smtp_server, smtp_port)
         else:
-            context = ssl.create_default_context()
             if smtp_type == SMTPType.SSL:
-                server = SMTP_SSL(smtp_server, smtp_port, context=context)
+                server = SMTP_SSL(smtp_server, smtp_port, context=self.context)
             elif smtp_type == SMTPType.STARTTLS:
                 server = SMTP(smtp_server, smtp_port)
-                server.starttls(context=context)
+                server.starttls(context=self.context)
             if self.username is not None:
                 server.login(self.username, self.password.get_secret_value())
 

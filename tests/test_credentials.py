@@ -1,3 +1,5 @@
+import ssl
+
 import pytest
 
 from prefect_email.credentials import (
@@ -26,6 +28,36 @@ def test_cast_to_enum_restrict_type(obj):
 def test_cast_to_enum_restrict_error():
     with pytest.raises(ValueError):
         _cast_to_enum("Invalid", SMTPType, restrict=True)
+
+
+def test_email_server_credentials_default_context():
+    credentials = EmailServerCredentials(
+        username="username",
+        password="password",
+    )
+    # can't compare objects directly like this
+    # assert credentials.context == ssl.create_default_context()
+    default_context = ssl.create_default_context()
+    # these implicitly test get_context()
+    assert credentials.context.protocol == default_context.protocol
+    assert credentials.context.options == default_context.options
+    assert credentials.context.get_ciphers() == default_context.get_ciphers()
+    assert credentials.context.verify_flags == default_context.verify_flags
+
+
+def test_email_server_credentials_set_context():
+    credentials = EmailServerCredentials(
+        username="username",
+        password="password",
+    )
+    default_context = ssl.create_default_context()
+    custom_context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_SERVER)
+    custom_context.options = ssl.OP_NO_TICKET
+    credentials.context = custom_context
+    assert credentials.context.protocol == custom_context.protocol
+    assert credentials.context.options == custom_context.options
+    assert credentials.context.protocol != default_context.protocol
+    assert credentials.context.options != default_context.options
 
 
 @pytest.mark.parametrize(
